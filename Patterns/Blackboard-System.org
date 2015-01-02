@@ -1,0 +1,170 @@
+* Pattern: Blackboard System
+
+** Intent
+
+Coordinate the interaction between several reasoners.
+
+** Motivation
+
+Many problems cannot be easily solved by a single reasoning mechanism.
+Instead, different parts of the problem might best be solved by various
+special-purpose or general-purpose reasoners. These reasoners have to be
+able to exchange knowledge; at the same time the communication overhead
+between reasoners has to be managed.
+
+** Applicability
+
+This pattern is applicable whenever several knowledge sources
+(reasoners) can be brought to bear on a problem. It is particularly
+appropriate when the order in which the knowledge source have to operate
+on the data is not known beforehand; if this knowledge is available, a
+simpler solution might be preferable.
+
+** Classification
+
+awareness, edlc-awareness, knowledge-representation, reasoning
+
+** Description
+
+A blackboard system consist of a [[pattern:Knowlege-Repository][Knowledge Repository]] (blackboard)
+that is shared by several reasoners, commonly called /knowledge
+sources/ in this context. All reasoners can access the knowledge
+repository, but only a single reasoner is active at any time. The
+choice of active reasoner is performed by a /control shell/. The
+control shell can typically query the reasoners to demand an estimate
+of the quality of each reasoner's contribution to the knowledge
+repository. The knowledge repository of blackboard systems is
+typically organized as [[pattern:Topological-Knowledge-Space][Topological Knowledge Space]].
+
+** Diagram
+
+The structure of a typical blackboard system is shown in
+Fig. XXX
+
+
+** Dynamic Behavior
+
+In typical blackboard systems, the control shell triggers knowledge
+sources until either no knowledge source can contribute new information
+to the blackboard or the problem has been solved. Most blackboard
+systems allow programmers to implement arbitrary behavior for control
+shells, so other behaviors are possible and often useful.
+
+** Implementation
+
+The Iliad system integrates its reasoning engines using a blackboard
+system based on the GBBOpen blackboard architecture. Using jRESP or
+Hexameter, the blackboard serves as MultiViewRepository presenting a
+tuple-space view that can be used for coordination purposes to external
+viewers, and acting as TopologicalKnowledgeSpace for the internal
+knowledge sources.
+
+In Iliad, the objects that can be placed on the blackboard are called
+/units/. All units derive from the class =standard-unit-instance=, the
+macro =define-unit-class= can be used to define unit classes. Unit
+classes can specify several slots as /dimensions/; these slots will be
+used to determine the location of the instance on knowledge spaces with
+a topology. In addition unit instances can specify the path of a
+blackboard on which their instances are placed by default.
+
+Blackboards can be nested in a tree structure; each blackboard has a
+local name and can be uniquely identified by the ordered list of names
+of its predecessors followed by its own name, its so-called /path/.
+Blackboards are defined using the function =make-space-instance= which
+is passed the path to blackboard and various parameters defining the
+properties of the blackboard, e.g., its topology and the classes that
+can be put on the blackboard.
+
+Knowledge sources have an /execution function/ that is called by the
+control shell when the knowledge source becomes active. To declare when
+a knowledge source might contribute new knowledge it can register for
+certain /events/ emitted by the control shell; knowledge sources are
+only eligible for activation when they are registered for the current
+event. Knowledge sources are defined using the =define-ks= macro.
+
+** Examples
+
+The following example shows a blackboard system that computes a random
+walk. Unit classes are classes whose instances can be stored on the
+blackboard; the keyword argument =:initial-space-instance= tells the
+blackboard system that all new instances of class =location= should be
+added to a blackboard named =known-world=. The knowledge source
+=startup-ks= is triggered when the control shell starts up and executes
+a function that creates a single location instance (and thereby places
+it on the blackboard). The =random-walk= knowledge source performs a
+random walk until the location moves too far away from the origin or
+more than 75 time steps have passed. The =print-walk= knowledge source
+is triggered whenever there is no other active knowledge source; in this
+case this happens when the random walk is over. The function
+=print-walk= prints the locations stored on the blackboard and stops the
+execution of the control shell. The =initializations= function is
+executed when the control shell starts; it deletes any blackboards that
+might exist from previous executions and creates a new space called
+=known-world=. Note that the blackboard created by =initializations= is
+a TopologicalKnowledgeSpace that uses the dimension of the =location=
+class to define its topology.
+
+#+BEGIN_EXAMPLE
+    (in-package :poem)
+
+    (define-unit-class location ()
+      (time x y
+       (next-location
+        :link (location previous-location :singular t)
+        :singular t)
+       (previous-location
+        :link (location next-location :singular t)
+        :singular t))
+      (:dimensional-values
+       (time :point time)
+       (x :point x)
+       (y :point y))
+      (:initial-space-instances (known-world)))
+
+    ;;; Startup KS
+
+    (defun startup-ks-function (ksa)
+      (declare (ignore ksa))
+      (make-instance 'location :time 0 :x 0 :y 0))
+
+    (define-ks startup-ks
+      :trigger-events ((control-shell-started-event))
+      :execution-function 'startup-ks-function)
+
+    (defun random-walk-ks-function (ksa)
+      ;; Move to the next (random) location in the world
+      )
+
+    (define-ks random-walk-ks
+      :trigger-events ((instance-created-event location))
+      :rating 100
+      :execution-function 'random-walk-ks-function)
+
+    (defun print-walk-ks-function (ksa)
+      ;; Print the results of the random walk
+      :stop)
+
+    (define-ks print-walk-ks
+      :trigger-events ((quiescence-event))
+      :rating 100
+      :execution-function 'print-walk-ks-function)
+
+    (defun initializations (event-name &key &allow-other-keys)
+      (declare (ignore event-name))
+      (delete-blackboard-repository)
+      (make-space-instance '(known-world)
+        :allowed-unit-classes '(location)
+        :dimensions (dimensions-of 'location)))
+
+    (add-event-function 'initializations 'control-shell-started-event
+                        :priority 100)
+#+END_EXAMPLE
+
+The implementation of this example does not take into account the need
+to UpdateExistingKnowledgeSources that may arise in long-running systems
+with special-purpose knowledge sources.
+
+** Related Patterns
+
+[[pattern:TopologicalKnowledgeSpace][Topological Knowledge Space]], [[pattern:Update-Existing-Knowledge-Source][Update Existing Knowledge Source]]
+

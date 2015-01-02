@@ -1,0 +1,1 @@
+* Pattern: Tuple-Space-Based Coordination

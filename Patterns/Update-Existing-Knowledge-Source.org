@@ -1,0 +1,150 @@
+* Pattern: Update Existing Knowledge Source
+
+** Specializes
+
+DynamicCodeUpdate
+
+** Intent
+
+Improve the performance of a blackboard system by updating knowledge
+sources.
+
+** Motivation
+
+It is sometimes necessary or desirable to change the behavior of
+knowledge sources in a blackboard system, e.g., when the domain model
+has been improved. For purely declarative knowledge sources this can be
+done without code update by simply modifying the axioms of the reasoner
+on the blackboard. For special-purpose reasoners it may be necessary to
+perform a DynamicCodeUpdate for the reasoner.
+
+** Applicability
+
+The system must use a blackboard architecture and allow
+DynamicCodeUpdates.
+
+** Classification
+
+edlc-awareness, edlc-deployment, edlc-runtime, implementation
+
+** Description
+
+The basic idea is to replace an existing knowledge source with a new one
+that performs better inferences or has more desirable performance
+characteristics. In principle every method for DynamicCodeUpdates can be
+used, but because of the structure of blackboard systems special
+considerations apply in some cases. These are detailed in the "variants"
+section.
+
+** Variants
+
+If the replacement was not planned, there are two main strategies:
+
+-  Overwrite Old Knowledge Source.
+
+-  Add New Knowledge Source.
+
+The first strategy simply overwrites the old knowledge source with the
+new one. It is a straightforward application of MonkeyPatching and
+suffers from all problems of this pattern, in particular it is likely to
+break components that rely on the implementation of the old knowledge
+source. If possible it should therefore be avoided.
+
+The second strategy can sometimes make use of the quality estimate that
+knowledge sources provide to the agenda shell to transparently replace
+the existing knowledge source: if the new knowledge source always
+returns a higher value than the old one, it will be selected for
+execution by the agenda shell in preference to the old knowledge source.
+In most situations this can be achieved simply by having the evaluation
+function of the new knowledge source call the evaluation function of the
+old one and add a small constant to the result. However, care must be
+taken that this does not lead to the exclusion of other knowledge
+sources that provide similar quality estimates. If this is a concern, it
+is sometimes possible to redefine only the quality-estimate function of
+the old knowledge source with one that returns a low estimate, thus
+leaving dependents of the old knowledge source intact but removing the
+old knowledge source itself from the blackboard.
+
+If the need replacement is already evident when the system is designed
+it is often beneficial to integrate a mechanism to Remove Unneeded
+Knowledge Sources into the control shell. The details of the protocol
+used for this purpose depend on the kind of knowledge sources used by
+the application and the amount of external state held by them. The basic
+idea is that each knowledge source registers a callback with the control
+shell that can be used to safely disengage it from the blackboard and,
+if needed, to transfer its internal state to a new knowledge source.
+
+If the language provides support for redefining classes and a protocol
+to transfer data from the old version of the class to the new one,
+Redefine Class of Existing Knowledge Source is a variant of this pattern
+that requires less advance work than Remove Unneeded Knowledge Source,
+is safer than Overwrite Old Knowledge Source and has less potential for
+interacting with unrelated knowledge sources than Add New Knowledge
+Source with an increased quality rating. The important step is to define
+a class $C$ that stores the required state for each knowledge source
+using and then call a method specialized on this class from the
+execution function of the knowledge source. When the class $C$ is
+redefined, the first call of the execution function triggers the
+conversion of the instance from the old class to the new one and invokes
+the user-defined update mechanism (e.g., in Poem by calling a
+user-defined method on the generic function
+=update-instance-for-redefined-class=). This process can save all
+required stated and update its representation for the new class if
+needed.
+
+** Example
+
+We demonstrate the pattern Redefine Class of Existing Knowledge Source
+in Poem. We assume that the a knowledge source =robot-ks= is defined as
+described in the pattern:
+
+#+BEGIN_EXAMPLE
+    (define-class robot-ks-data ()
+      ((random-state :initform (make-random-state))))
+    (defmethod navigate ((self robot-ks-data) target)
+      (format t "~&Perform random walk to target."))
+    (defvar *robot-ks-data* (make-instance 'robot-ks-data))
+
+    (define-ks robot-ks
+      :execution-function '(lambda () (navigate *robot-ks-data*)))
+#+END_EXAMPLE
+
+The original definition is supposed to perform a random walk. To update
+to a knowledge source that uses a map for navigation, develop a new
+implementation and test it in the development environment. Once the new
+definition is ready for production use, upload it to the production
+system using the usual mechanism for hot code deployment in your system.
+Suppose your new implementation is as follows:
+
+#+BEGIN_EXAMPLE
+    (define-class map-of-the-environment ()
+      ())
+    (define-class robot-ks-data ()
+      ((map :initform (make-instance 'map-of-the-environment))))
+    (defmethod navigate ((self robot-ks-data) target)
+      (format t "~&Navigate using map.")
+#+END_EXAMPLE
+
+The first time the =robot-ks= is activated after the new code is
+deployed, the =navigate= method will determine that it has been called
+with an obsolete instance of the class =robot-ks-data= and update the
+instance by removing the =random-state= slot and adding a =map= slot
+which will be initialized by calling the initform
+=(make-instance ’map-of-the-environment)=. Note that the identity of the
+instance does not change in this process, i.e., all references to the
+instance will remain valid.
+
+If additional work has to performed before the new =robot-ks-data=
+instance is ready for use, a method on the generic function
+=update-instance-for-redefined-class= can be defined in the following
+way.
+
+#+BEGIN_EXAMPLE
+    (defmethod update-instance-for-redefined-class :after
+        ((self robot-ks-data) added-slots discarded-slots property-list
+         &rest initargs)
+      (declare (ignore initargs))
+      ;; Perform any necessary updates to initialize the new class.
+      (format t "~&Updating class ~A." (class-name self)))
+#+END_EXAMPLE
+

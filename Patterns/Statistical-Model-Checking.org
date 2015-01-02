@@ -1,0 +1,73 @@
+* Pattern: Statistical Model Checking
+
+** Intent
+
+Validate quantitative properties of a system at design time.
+
+** Motivation
+
+It is desirable to ascertain that a system can perform according to
+specification as early as possible in the design process, and to
+validate changes of the system design when requirements or environmental
+conditions change. Traditional verification and validation techniques
+are often difficult to scale to the size of ensembles.
+
+** Applicability
+
+Statistical Model Checking is applicable in many situations in which
+quantitative properties of ensembles need to be validated at design
+time. It is necessary to have (stochastic) models of the system and its
+environment that match the actual behavior closely enough to ensure
+meaningful results.
+
+While it scales well when compared to many other validation techniques,
+the computational and memory requirements of statistical model checking
+may be too high for very large systems. Systems that include
+non-determinism may pose problems for statistical model checkers,
+although advances in the area of statistical model checking for, e.g.,
+Markov Decision Procedures, have recently been made. Statistical model
+checking provides only statistical assurances; it can therefore not be
+applied in situations where a proof of correctness is required.
+Furthermore, statistical model checking cannot validate properties that
+can only be established for infinite execution traces. In cases where
+precise behavioral estimates are required, the effort for statistical
+model checking may be prohibitive.
+
+** Classification
+
+component, edlc-verification-and-validation, ensemble, validation
+
+** Description
+
+In contrast to traditional (numerical) model checking techniques,
+statistical model checking runs simulations of the system, performs
+hypothesis testing on these simulations and then uses statistical
+estimates to determine whether the probability that the system satisfies
+the given hypotheses is above a certain threshold.
+
+Since it samples the execution traces, statistical model checking has
+several advantages over numerical model
+checking \cite{DBLP:conf/rv/LegayDB10}:
+
+-  Only the distribution of sample executions has to be represented in
+   the model, and it is possible to use, e.g., infinite state models or
+   "black-box" models in which part of the internal structure is unknown
+   or not yet decided.
+
+-  Since the model-checking process works by hypothesis testing, a wider
+   range of logics can be used to describe the desired system behavior
+   than for other model-checking approaches.
+
+-  It is easy to parallelize the model checking process, since several
+   simulations can be run concurrently.
+
+On the other hand, the results obtained by statistical model checking
+are only statistical estimates and the computational effort to obtain
+small confidence intervals may be very high.
+
+** Examples
+
+Several examples for applying the Statistical Model Checking pattern to
+validate properties of ensembles and choose between different
+implementation strategies are presented in \cite{JD31}.
+

@@ -1,0 +1,396 @@
+* Pattern: Awareness-Mechanism
+
+** Intent
+
+An awareness mechanism is a model of an ensemble's environment (and
+possibly the ensemble itself) that is available at run-time, together
+with reasoners, and a sensor system that keeps the model in sync with
+the environment. Awareness mechanisms can be used to reason about the
+current state of the environment and provide an [[pattern:Illusion-Of-Stability][Illusion of Stability]]
+for deterministic reasoners performing, e.g., [[pattern:Algorithmic-Planning][Algorithmic Planning]] or
+[[pattern:Action-Calculus-Reasoning][Action-Calculus Reasoning]].
+
+** Summary
+
+An /awareness mechanism/ consists of an /awareness model/ which is
+/inversely connected/ to the environment, /reasoners/ that can draw
+inferences from the awareness model, and a /sensor system/ that
+maintains the inverse connection. See below for a description of these
+terms and \cite{tcam} for a detailed discussion. An awareness model is
+often a Multi-Model and a Deep Model, in particular it often combines
+Logical Models and Probabilistic Models.
+
+** Classification
+
+awareness, conceptual
+
+** Description
+
+We introduce the elements that an awareness mechanism has to possess,
+and the characteristics according to which awareness mechanism can be
+classified.
+
+** Elements of the awareness mechanism
+
+It is difficult to conceive of a completely memory-less (self-)aware
+system; therefore a system $S$ that exhibits awareness has to have
+/some/ way to store information about itself or its environment $E$; we
+call this information the /awareness model/ $M$ of $S$. The awareness
+model can be distributed among various nodes of $S$ and even the
+environment $E$. Therefore, our concept of awareness models also
+encompasses system architectures based on stigmergy, e.g., robots that
+place tokens in their environment to mark places they have already
+visited.
+
+The designers of a system that operates in a well-known, static
+environment may build an internal model that contains all information
+required by the system to operate successfully. In the more interesting
+case of open-ended, non-deterministic environments in which other agents
+are operating as well, we cannot ignore the dynamics of the environment
+$E$ (which includes, from the point of view of $S$, the other agents):
+we want changes in $E$ to influence the awareness model $M$. However
+this influence is usually not immediate, since the system has to obtain
+the information that $E$ has changed before it can update $M$. Therefore
+we say that $S$ (or, slightly inaccurately, \(M\)) is /inversely
+(causally) connected/ to $E$ if certain changes in $E$ lead to
+corresponding changes in $M$ after $S$ reaches some state in which it
+can perceive the changes in its environment. We call the subsystem that
+is responsible for maintaining the inverse connection between $E$ and
+$M$ the /sensor system/ of $S$. Apart from sensors or other data input
+devices it may contain pre-processing or filtering units that transform
+the raw data in a form that is more amenable to future processing.
+
+Most environments are only partially observable: $S$ cannot directly
+perceive all relevant information, instead it may have to /reason/ about
+the available data to obtain the information required for action. We use
+the term "reason" in a very broad sense: the /reasoning engine/ of a
+simple agent might be a program that simply queries the data stored in
+its awareness model, or it might perform simple computations, such as
+computing the length of a path by summing up the length of its
+components. More sophisticated reasoning engines might perform complex
+inferences, run simulations or develop plans as part of their reasoning
+process, and a system may include several, distributed reasoning
+engines.
+
+We call the combination of sensor system, awareness model and reasoning
+engines of a system its /awareness mechanism./ Its components need not
+be dedicated to the awareness mechanism, they can also be used by other
+parts of the system.
+
+A system's awareness mechanism provides no benefits unless other parts
+of $S$ or external observers have some way to access its contents. In
+the simplest case, access may be provided an interface that allows other
+components of the system to pose queries to the reasoners and retrieve
+the results of the inference; in biological systems this mechanism may
+be much more complicated and directly integrated with the awareness
+model and reasoners.
+
+If it allows queries about the history of the system we say that the
+access mechanism is /diachronic/; if $S$ can query its awareness
+mechanism about consequences of actions without committing to these
+actions or about properties of hypothetical environments we say it
+/allows hypotheses/.
+
+*** A white-box definition of awareness
+
+The presence or absence of a certain class of model does not separate
+ensembles into "aware" or "not aware;" instead we want to characterize
+and compare the /degree of awareness/ that various ensembles possess. In
+this section we focus on a white-box definition in which we assume that
+we can analyze all internal mechanisms of the systems under
+consideration. We assume that the state of a system and its environment
+at a single moment in time can, at least in theory, be described by a
+SOTA /state space/, and we call all possible trajectories the system can
+take through the state space over time its /trajectory space/ or /phase
+portrait/. A more in-depth discussion of the GEM model underlying these
+notions can be found in \cite{DBLP:conf/birthday/HolzlW11}, but the
+details are not important for understanding this pattern.
+
+We classify awareness mechanisms along three different axes:
+/expressivity/, /quality/ and /interface/ with the rest of the system.
+
+**** Expressivity.
+
+There are various types of models used in software engineering and
+artificial intelligence, and many systems use several types of models in
+different parts of their awareness models. However, most models can be
+classified along the following three dimensions:
+
+-  Scope :: To remain manageable, an awareness model will only include
+   some dimensions of the state space, and it will only contain a
+   limited amount of historical information. The /scope/ $\sigma$ of the
+   model describes which subspace of the trajectory space is represented
+   in the awareness model and the granularity with which this subspace
+   is represented.
+
+-  Depth :: Following \cite{DBLP:conf/ijcai/KleinF87}, we call a
+   measure for the amount of information explicitly contained in a model
+   that is related to the model's scope its /depth/.
+
+Note that scope and depth are defined with relation to the state space;
+both "$M_1$ has larger scope than $M_2$" and "$M_1$ is deeper than
+$M_2$" mean that $M_1$ contains more information than $M_2$, the
+difference is whether this information is part of the system's state or
+whether it is meta-information about the model's content. Intuitively,
+the scope of an awareness model $M$ describes how big the slice of the
+world represented by $M$ is, and the depth of $M$ describes how rich the
+ontology of the model is.
+
+As an example, we may look at a video camera that records a room in
+which persons $A$, $B$ and $C$ are moving around. We assume that we are
+interested in the locations of the three persons, hence our state space
+contains $(x, y)$ coordinates for $A$, $B$ and $C$. If the video camera
+stores an hour of video, what is the scope of its awareness model? Since
+the video feed contains no data about the position of either person, its
+intersection with the state space, and hence its scope, is empty. A
+person watching the video might be able to extract information about the
+locations, but that is a result of the awareness mechanism of the human,
+not the camera. This example demonstrates that the /expressivity of a
+model/ is not a measure for the information that can be extracted from
+the model by a sufficiently intelligent observer, but only for the data
+that is explicitly stored in the model. To put it more succinctly,
+expressivity of models is not equal to amount of data. If we assume that
+we have a smart camera that can recognize people (but not individuals)
+and store the information about their locations in addition to the video
+feed, the scope of the awareness model is no longer empty. In this case
+the granularity of the model is relatively low, since it cannot
+distinguish permutations of the locations of $A$, $B$ and $C$. If we
+additionally equip the camera with a facial recognition module, the
+model becomes more fine-grained, since observations that were previously
+equivalent can now be distinguished.
+
+As this example shows, the expressivity of the model on its own is not
+sufficient to describe the expressivity of a system's awareness
+mechanism; we must also take into account the capabilities of the
+reasoning engines. For example, if the smart camera in the previous
+example stores only the image data, the model together with the
+recognition module can still provide information about the location of
+$A$, $B$ and $C$, even though this information is not explicitly stored
+in the model.
+
+The two dimensions discussed above, scope, and depth, can also be used
+to characterize the entire awareness mechanism if we generalize them
+from the data stored in the awareness model to the questions that can be
+asked of the awareness mechanism and the answers it provides. There are
+some technical challenges in providing precise definitions, but their
+intuitive meaning remains unchanged: the /scope/ of an awareness
+mechanism describes the slice of the world (i.e., trajectory space)
+about which the awareness mechanism can provide answers and the amount
+of detail provided by the answers, and its /depth/ the ontological and
+structural complexity of questions and answers.
+
+**** Quality.
+
+An awareness model that has great scope, breadth and depth, yet bears
+only a remote relationship to the actual environment in which a system
+operates is not particularly useful. Similarly, a reasoner that can
+answer a wide range of questions may not be useful for a system if it
+takes too long to derive answers. Therefore we are not only interested
+in the expressivity of awareness mechanisms but also in their /quality/
+which we subdivide into accuracy and performance:
+
+-  Accuracy :: The /accuracy/ of an awareness mechanism is a measure
+   for the distance between answers provided by the awareness mechanism
+   and the corresponding "real" values. This measure also takes into
+   account the different states of the system, e.g., stigmergy-based
+   awareness might only be able to access information stored in
+   currently visible parts of the environment and therefore the accuracy
+   of awareness might strongly depend on the physical location of the
+   system or its nodes. In dynamic environments, accuracy depends on how
+   frequently the awareness model is updated.
+
+-  Performance :: We define the performance of an awareness mechanism
+   as a measure of the probability that a set of queries having a
+   particular maximum level of complexity can be answered with a certain
+   minimal level of accuracy in a given time.
+
+The accuracy of different awareness mechanisms can be estimated by
+comparing the data in the awareness model with reality, e.g., by
+measuring the total difference between the location of a robot $R$
+obtained from its awareness model and its actual location (as observed
+by a high-precision tracking system) over the duration of a simulated
+rescue mission. In dynamic environments, accuracy obviously depends on
+the time needed to update $R$'s awareness model after changes in the
+environment. For example, assume that $R$ has a map of the environment
+that it uses for path planning, but that $R$ only updates its models
+using data from its own sensors. If an avalanche blocks a part of the
+road that $R$ intends to take, this will not be reflected in $R$'s model
+until $R$ reaches the blocked part of the road, so this aspect of the
+model is inaccurate over long periods of time. If, however, $R$ also
+updates its model based on information received from other robots it may
+increase the accuracy of its awareness since data about remote obstacles
+can be integrated into the model in a timely manner.
+
+For some reasoning engines it is possible to increase the performance of
+inferences by reducing the accuracy of the answers. For example,
+reasoners that rely on local search or Monte-Carlo simulations can often
+control the number of iterations they perform and thereby trade accuracy
+for performance. Some awareness-mechanisms need to be provided with a
+time limit before the query is processed, others can provide a result
+whenever it is requested, with longer waiting times leading to improved
+accuracy. In analogy to the terminology for algorithms we call the
+latter /anytime/ awareness mechanisms.
+
+Since many reasoning mechanisms are not completely deterministic, the
+quality of an awareness mechanism is best described as the probability
+that a query with a certain level of expressivity can be answered with
+accuracy $a$ in time $t$, i.e., quality is not a function, but rather a
+probability distribution over accuracy and performance conditioned on
+the expressivity of the queries (and other factors, such as the
+allocated time and resources for reasoning).
+
+**** Interface.
+
+A third aspect that distinguishes different awareness mechanisms is how
+much access they permit for the rest of the system or to external
+observers, and how their connection with the rest of the system is
+achieved. We usually use the term /interface/ to describe the connection
+that an awareness mechanism has to the rest of the system. In
+software-intensive system the awareness mechanism may provide and
+require precisely specified interfaces to interact with other
+components. In biological systems the connection between the awareness
+mechanism and the rest of the system is often much less clearly
+delineated and corresponds better to the notion of /combination
+operator/ from \cite{DBLP:conf/birthday/HolzlW11}. The interface may not
+provide the full expressivity and quality of the awareness mechanism to
+the rest of the system. For example, the interface of an intelligent
+camera might only expose aggregate data and not the locations of
+individual persons at particular times. We call these aspects of the
+interface of an awareness mechanism its /accessibility/.
+
+**** Degree of Awareness.
+
+With the previously discussed dimensions of awareness mechanisms, a
+/non-operational/ (or /structural/, /white-box/) classification of
+degrees of awareness is relatively straightforward: The /(internal)
+degree of awareness/ of a system is determined by the expressivity
+(scope, granularity and depth), and quality (performance, accessibility)
+of its awareness mechanism. We call the integration of the awareness
+mechanism the /(structurally) exposed degree of awareness/ of a system.
+Various (non-operational) notions of self-awareness found in the
+literature can be expressed in our classification by placing constraints
+on the expressivity of the awareness mechanism.
+
+[[images/pyramid]] [fig:pyramid]
+
+** Implementation
+
+In the project, the jRESP \cite{D15} implementation of
+SCEL \cite{SCEL-TR} is typically used to define the overall behavior of
+the ensemble, the communication and coordination between components and
+the overall behavior of individual components. The awareness mechanism
+of each component performs reasoning tasks for the SCEL controller of
+this component; it can be implemented, e.g., in
+/KnowLang/ \cite{KnowLangOS} using the /KnowLang/ reasoner or in
+Poem \cite{poem-tr} using the Iliad/jRESP integration. The sensor system
+of the awareness mechanism can either be part of the SCEL program, or it
+can be performed transparently by the /KnowLang//Poem runtime. One
+possible way to structure the subsystems of an awareness mechanism is as
+/pyramid of awareness/ \cite{vassev:pyramid}, see Fig. [fig:pyramid].
+
+To demonstrate the interaction between SCEL and an awareness mechanism
+we show a simple example in which a jRESP controller uses a knowledge
+repository that is backed by an Iliad reasoner. In this example a single
+robot has to navigate from its current position in a grid world to a
+given target position. The SCEL program controls the movement of the
+robot; to determine the next action it puts information about the
+current state to the Poem knowledge repository and then gets the next
+action from this repository. By being responsible for the update of the
+knowledge repository, part of the SCEL program is part of the awareness
+mechanism.
+
+The class =ScelPoemNav= implements this behavior in jRESP. The attribute
+=poem= represents the Poem knowledge repository; tuples and templates
+for this repository are created by the utility functions =makePoemTuple=
+and =makePoemTemplate=; as usual the methods =put= and =get= are used to
+store and retrieve tuples. The method =getPoemValue= is a simple wrapper
+around =get= that casts the result from type =Object= to the more
+specific type =PoemValue=. The method =navigateToTarget= initially
+informs the reasoner about the current position and the target position
+by placing two tuples
+$\langle \textit{set-current-pos}, \textit{cur}_x, \textit{cur}_y
+\rangle$ and $\langle \textit{set-target-pos}, \textit{target}_x,
+\textit{target}_y \rangle$ in the =poem= knowledge repository. It then
+repeatedly queries the repository for the next move by calling =get=
+with the template $\langle \textit{get-next-move}
+\rangle$ on the repository. This operation returns the compass direction
+of the next move, or the value =NIL= if the robot has reached the
+target. When a compass direction is returned, the controller executes
+the requested move by driving to the new location and then informs the
+reasoner about the new position and the cost for performing the action.
+
+#+BEGIN_SRC java
+    public class ScelPoemNav {
+      public ScelPoemNav(int curX, int curY, int maxMoves) {
+        this.maxMoves = maxMoves;
+        this.curX = curX;
+        this.curY = curY;
+      }
+
+      // ...
+      private PoemAdaptor poem;
+      private int maxMoves;
+      private int curX;
+      private int curY;
+      
+      public void navigateToTarget(int targetX, int targetY)
+            throws InterruptedException {
+        poem.put(makePoemTuple("set-current-pos", curX, curY));
+        poem.put(makePoemTuple("set-target-pos", targetX, targetY));
+        PoemValue nextMove;
+        for (int i = 0; i < maxMoves; i++) {
+          nextMove = poem.getPoemValue(makePoemTemplate("(get-next-move)"));
+          if (nextMove.equals(PoemSymbol.NIL)) {
+            break;
+          }
+          executeMove(nextMove);
+        } 
+      }
+      
+      private void executeMove(PoemValue nextMove)
+            throws InterruptedException {
+        int movementCost = driveToNewPosition(nextMove);
+        poem.put(makePoemTuple("set-current-pos", curX, curY));
+        poem.put(makePoemTuple("set-action-cost", movementCost);
+      }
+
+      private void driveToNewPosition(PoemValue nextMove) {
+        // Drive to new position and update curX and curY.
+      }
+    }
+#+END_SRC
+
+The definitions of =makePoemTuple= and =makePoemTemplate= determine the
+behavior of the reasoner when a =put= or =get= request is sent to the
+reasoner. For this example, each request simply calls a corresponding
+function in the reasoner, so that a basic implementation of the
+awareness mechanism could be achieved as follows:
+
+#+BEGIN_SRC lisp
+    (defstruct pos 
+      (x 0 :type integer)
+      (y 0 :type integer))
+
+    (defvar *current-pos* (make-pos))
+    (defvar *target-pos* (make-pos))
+    (defvar *action-cost* 0)
+
+    (defun set-current-pos (x y)
+      (setf *current-pos* (make-pos :x x :y y)))
+
+    (defun set-target-pos (x y)
+      (setf *target-pos* (make-pos :x x :y y)))
+
+    (defun set-action-cost (cost)
+      (setf *action-cost* cost))
+
+    (defun get-next-move ()
+      ;; Compute and return the next move, e.g., by learning a map of the environment.
+      )
+#+END_SRC
+
+Depending on the details of the scenario the function =get-next-move=
+could, e.g., use the reinforcement learning mechanism of Iliad to learn
+how to navigate in an unknown environment.
+
+#+BIBLIOGRAPHY: patterns plain limit: t

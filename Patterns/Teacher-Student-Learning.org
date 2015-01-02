@@ -1,0 +1,150 @@
+* Pattern: Teacher/Student
+
+** Specializes
+
+[[pattern:Cooperation-Mechanism][Cooperation Mechanism]]
+
+** Intent
+
+Reduce the computational resources needed for adaptation.
+
+** Motivation
+
+In many systems it is not possible that all agents possess sophisticated
+awareness mechanisms. By equipping only a part of the system's
+components ("teachers") with sophisticated awareness mechanisms and
+allowing awareness-based behaviors to be transmitted to the other
+components ("students"), the resources spent on the awareness mechanism
+may be reduced.
+
+** Applicability
+
+This pattern is applicable when machine learning or awareness-based
+behavior of autonomous components may improve the performance of the
+system but the awareness mechanism is not required to determine the
+current state of individual components. Students need to either allow
+[[pattern:Dynamic-Code-Update][Dynamic Code Update]] or use [[pattern:Data-Driven-Execution][Data-Driven Execution]] and allow the upload
+of control data. When components do not have to be autonomous or when
+communication is cheap, a [[pattern:Shared-Awareness-Mechanism][Shared Awareness Mechanism]] may provide
+superior performance. When state estimation in the environment is
+difficult, [[pattern:Peer-To-Peer-Learning][Peer-To-Peer Learning]] may be a more appropriate solution.
+
+** Classification
+
+awareness, architecture, edlc-design, ensemble
+
+** Description
+
+As described in the motivation, teachers are components with awareness
+mechanisms that can externalize the relevant part of the awareness
+mechanism. For example, teachers might use a table-based
+reinforcement-learning mechanism that allows access to the table
+representing its value-function. Teachers pass this information on to
+their students.
+
+The mapping between teachers and students can either be constant, i.e.,
+a teacher keeps its students for the lifetime of the system, or it can
+depend on the current configuration of the system, e.g., a teacher for
+an ensemble of mobile robots might pass information to students in its
+vicinity, without taking into account their identities.
+
+The transfer of knowledge may be triggered by a variety of criteria,
+e.g., by improvements of the teacher's behavior (i.e., the teacher keeps
+track of its previous performance evaluation and only transfers
+knowledge to its students when the performance has increased by a
+certain amount), by the passing of time, by the teacher meeting new
+students, or by the teacher entering a region in which it was not active
+recently.
+
+If multiple teachers are in an ensemble they typically have to
+coordinate their behavior (i.e., employ a CooperationMechanism) in order
+to achieve maximum performance. For example, it is generally not
+advisable that all teachers for a robot swarm are clustered in the same
+region.
+
+Even in the case of a single teacher, care has to be taken to avoid
+unintended effects when transferring strategies to the students. In
+particular, a strategy that may be optimal for an individual robot may
+not perform well when several robots execute it at the same time. For
+example, when there are multiple victims that a swarm of robots has to
+rescue, it is not helpful if the teacher causes all robots to go to the
+victim that should be rescued first and ignores the other victims. A
+general solution to this problem for teachers that improve their
+behavior using ReinforcementLearning is to use
+ConcurrentReinforcementLearning with an OfflineLearning algorithm to
+simultaneously learn the behavior for several students, and then teach
+different behaviors to the students. However, this solution greatly
+increases the computational burden on the teacher, and it may require
+the clients to frequently synchronize with each other in order to
+preserve the semantics of the concurrent learning algorithm.
+
+** Implementation
+
+In many cases the teachers use ReinforcementLearning to improve their
+performance, possibly combined with reasoning mechanisms to speed up
+convergence of the learning process. If a flat reinforcement learning
+algorithm is used, the $V$ or $Q$ function can typically be extracted
+from the learning mechanism and transferred to the students; if all
+functions required for state abstraction are present on the students
+this can be done by only transferring data between teachers and students
+and not functions.
+
+However, flat reinforcement learning is too weak for many real-world
+scenarios, and often more sophisticated approaches such as hierarchical
+reinforcement learning are used. In this case the $V$ or $Q$ functions
+on their own are not sufficient to replicate the behavior of the teacher
+on the student; it is necessary that the students can also replicate the
+internal steps of the learning program. If the hierarchical
+reinforcement module of Poem is used, it is easy to overcome this
+problem by running the same partial programs on teachers and students.
+In contrast to the teachers, the students never trigger any learning
+algorithm in Iliad's reinforcement learning machine (RLM) when they come
+to a non-deterministic choice; instead the student's RLM is configured
+to immediately resolve the choice by looking up a solution using data
+obtained from a teacher. Since the execution of Poem programs on the
+Iliad runtime is very efficient, this strategy is possible for all but
+the most resource constrained devices. It would be easy to develop a
+"student library" that implements the non-deterministic Poem language
+constructs (which currently always transfer control to the RLM, even
+when it is not running a learning algorithm) by directly looking up the
+choices in a table. Then clients would not even have to load the RLM
+into memory; however this optimization is currently not a priority.
+
+In cases where hierarchical reinforcement learning methods are used but
+it is not possible to re-use the teacher's programs for students, e.g.,
+because the students are robots programmed in ARGoS, the
+control-behavior of the teacher's programs has to be manually replicated
+on the students.
+
+** Variants
+
+TeacherDumbStudent: In this pattern, the student executes only the
+behavior provided by the teacher and has no teacher-independent logic
+besides the functionality necessary to obtain new behaviors from a
+teacher.
+
+TeacherSmartStudent: In this variant of the pattern the student
+possesses additional logic that does not depend on the behavior imparted
+by the teacher. E.g., a "smart student" in a robot rescue scenario might
+receive its navigation information from a teacher but be capable to
+administer medical aid to victims without any outside help. While
+students in this scenario can potentially be more flexible and
+autonomous than in the TeacherDumbStudent pattern the necessity to
+integrate the built-in behavior and the learned behavior may restrict
+the range of learning for the students. When the amount of
+teacher-independent behavior in student-components is large it may be
+considered an instance of PeerToPeerLearning rather than a
+TeacherStudent relationship.
+
+** Examples
+
+A Hexameter-based implementation of a swarm-robotics scenario using a
+combination of DistributedAwarenessBasedBehavior and the TeacherStudent
+pattern is currently in progress. We expect to release the source code
+on Github in November 2013.
+
+** Related Patterns
+
+[[pattern:Peer-To-Peer-Learning][Peer-To-Peer Learning]], [[pattern:Reinforcement-Learning][Reinforcement Learning]]
+
+[1] [[http://gbbopen.org/]]

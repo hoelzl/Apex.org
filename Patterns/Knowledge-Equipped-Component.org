@@ -1,0 +1,102 @@
+* Pattern: Knowledge Equipped Component
+
+** Intent
+
+Enable an autonomous component to operate in a context-sensitive manner
+that potentially requires interaction with other components.
+
+** Motivation
+
+Various architectures exist that allow components and systems to exhibit
+these kinds of complex, context-sensitive behaviors and interactions.
+Knowledge Equipped Components are components with individual behaviors
+and knowledge repositories that can dynamically form aggregations. These
+components can often be arranged in a Flat Architecture to provide a
+powerful and flexible, yet simple, architectural choice.
+
+** Applicability
+
+Knowledge Equipped Components are well-suited to ensembles in which
+components need to act autonomously and interact with each other. They
+can be used in different architectural styles such as Peer-to-peer or
+Client/Server systems.
+
+Components need to have at least a modest amount of computational power
+and local storage; the pattern is not applicable for systems that rely
+on, e.g., pure stigmergy. Furthermore, if interaction is necessary,
+components must be equipped with a communication mechanism that enables
+sender and receiver to establish their identities and sufficient
+bandwidth must be available.
+
+** Classification
+   
+architecture, component, edlc-design, edlc-modeling
+
+** Description
+
+A knowledge-equipped component, is equipped with /behaviors/ and a
+/knowledge repository./ Behaviors describe the computations each
+component performs. They are typically modeled as processes executing
+actions, for example in the style of process calculi or in rewriting
+logic. In systems using knowledge-equipped components, interaction
+between components is achieved by allowing components to access the
+knowledge repositories of other components; access restrictions are
+mediated by access policies.
+
+Knowledge repositories provide high-level primitives to manage pieces of
+information coming from different sources. Knowledge is represented
+through items containing either application data or awareness data. The
+former are used for determining the progress of component computations,
+while the latter provide information about the environment in which the
+components are running (e.g. monitored data from sensors) or about the
+actual status of an autonomic component (e.g. its current location).
+This allows components to be both context- and self-aware. The knowledge
+repository's handling mechanism for knowledge-equipped components has to
+provide at least operations for adding knowledge, as well as retrieving
+and withdrawing knowledge from it.
+
+** Implementation
+
+SCEL \cite{SCEL-TR} defines primitives for modeling and implementing
+Knowledge Equipped Components. An example for the behavior of a
+component implemented in SCEL is the following monitor for a
+garbage-collecting robot (which is a simplified version of the
+controller analyzed in \cite{DBLP:conf/fmco/WirsingHTZ11}):
+
+\begin{split}
+s & \triangleq \mathbf{get}(\mathit{item})@ctl.p \\
+p & \triangleq \mathbf{get}(\mathit{items}, !x)@\mathit{master}. \mathbf{put}(\mathit{items}, x+1)@\mathit{master}.c \\
+c & \triangleq
+\mathbf{get}(\mathit{arrived})@ctl. \mathbf{put}(\mathit{dropped})@\mathit{master}.s
++ \mathbf{get}(\mathit{done})@ctl\\
+\end{split}
+
+This monitor waits until a tuple /item/ becomes available in the
+knowledge repository /ctl/, updates a counter in the knowledge
+repository /master/, and then waits until either a tuple /arrived/ or a
+tuple /done/ is available in /ctl/. In the first case the controller
+informs the repository /master/ that it has /dropped/ an item and
+resumes from the beginning, if instead a tuple /done/ is retrieved from
+/ctl/ the monitor stops.
+
+This example also shows how several knowledge-equipped components can
+interact via a shared knowledge repository /master/. Note that no
+further synchronization primitives are necessary, even in the case where
+the /master/ repository is shared between different components, since
+the first component to perform the action
+$\mathbf{get}(\mathit{items}, !x)@\mathit{master}$ removes the
+/items/-tuple from this knowledge repository, and other components will
+block on their $\mathbf{get}(\mathit{items},
+!x)@\mathit{master}$ operations until the first component has *put* the
+updated tuple back into /master/.
+
+** Related Patterns
+
+The coordination of interactions for knowledge-equipped components is
+an example of [[pattern:Tuple-Space-Based-Coordination][Tuple Space Based Coordination]]; the interaction between
+components can be performed using [[pattern:Attribute-Based-Communication][Attribute-based Communication]]. If
+the knowledge of the component is repeatedly or continuously updated
+to correspond to the environment, the knowledge repository and
+processes responsible for updating it form an [[pattern:Awareness-Mechanism][Awareness Mechanism]]. An
+ensemble containing multiple such components exhibits [[pattern:Distributed-Awareness-Based-Behavior][Distributed
+Awareness Based Behavior]].

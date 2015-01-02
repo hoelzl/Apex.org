@@ -1,0 +1,121 @@
+* Pattern: Distributed Awareness Based Behavior
+
+** Intent
+
+Enable an ensemble to operate in complex, open-ended, partially
+observable environments by providing individual components with
+[[pattern:Awareness-Mechanism][Awareness Mechanism]]s.
+
+** Motivation
+
+Ensembles often have to operate in environments whose properties are not
+completely known; they may encounter situations where complex decisions
+have to be taken under uncertain circumstances. Predetermining the
+desired behaviors at design time is often difficult or impossible.
+Furthermore, often individual components of an ensemble have to act
+autonomously. In these cases it may be possible to achieve the desired
+behavior of the ensemble by equipping individual components with an
+Awareness Mechanism and provide them with goals or measures of utility
+so that the aggregate behavior of the components will result in the
+desired system behavior.
+
+** Applicability
+
+For this pattern to be applicable, structural information about the
+environment has to be available as an awareness model (see [[pattern:Awareness-Mechanism][Awareness
+Mechanism]]); this model may be a database-like mechanism such as a
+tuple space, or it may take the more complex form of a [[pattern:Logical-Model][Logical Model]]
+or a [[Probabilistic-Model][Probabilistic Model]] with corresponding reasoners. The components
+have to be able to map their runtime situation to the awareness model
+with enough precision to ensure that the quality of the awareness
+mechanism is high enough to reliably reach the system's goals. The
+overall task of the system has to be reducible to tasks that can
+(possibly cooperatively) be performed by the individual components;
+the distribution of these subtasks to the components has to be decided
+at design time or a run-time mechanism for Task Allocation has to be
+feasible. For a utility-based system it must be possible to factor the
+system's overall utility function into individual utility functions
+for each component (i.e., perform Threadwise Decomposition of the
+utility function). Depending on the size and complexity of the
+awareness model, significant computational resources and storage might
+have to be available at run time.
+
+When these requirements are not satisfied, [[pattern:Model-Free-Learning][Model Free Learning]] applied
+to individual components may provide some of the same benefits but
+potentially require a large number of training runs and offer fewer
+static guarantees. If the system's run-time resources are not
+sufficient for providing an awareness model but data about the
+circumstances encountered by the system can be transmitted back to the
+developers, Simulation in the Loop may be used to reduce the amount of
+work that has to be performed by the awareness mechanism of the
+system. If at least some components can be equipped with sufficient
+capabilities to run awareness mechanisms, a [[pattern:Teacher-Student-Learning][Teacher Student]]
+architecture can be employed to reduce the computational effort on a
+subset of components. If all components have severe resource
+restrictions, an awareness-based architecture may not be possible and
+system architectures such as [[pattern:Swarm][Swarm]] or [[pattern:Client-Server][Client/Server]] may be more
+appropriate.
+
+** Classification
+
+awareness, architecture, edlc-design, ensemble
+
+** Description
+
+The architecture of a system based on this pattern is relatively
+straightforward, but each of the following steps poses significant
+challenges and is detailed by further patterns. In a system based on
+[[Distributed-Awareness-Based-Behavior][Distributed Awareness Based Behavior]], each component is equipped with an
+Awareness Mechanism. The tasks each component has to perform are either
+determined at design time, or a method to perform Task Allocation or
+Threadwise Decomposition of the system's utility function is used at run
+time to divide the system tasks among the system's components. Further
+Temporal Decomposition of the component's goals or utility functions is
+often necessary to reduce goals to atomic operations. Unless a
+decomposition can be found that allows each decomposed task to be
+performed by a single component, a Cooperation Mechanism has to be
+integrated into the system.
+
+** Dynamic Behavior
+
+The characteristic feature of an architecture based on Distributed
+Awareness Based Behavior is that each component has its own awareness
+mechanism; therefore no general description of the ensemble's behavior
+or the dynamic behavior of components in an ensemble using this
+architecture is possible.
+
+A simple control loop for components with an awareness mechanism might
+take the following form:
+
+1. Determine the next task to be performed
+
+2. Decompose the task into executable subtasks
+
+3. Perform the subtasks
+
+In this case the bulk of the work in the first two steps would be
+performed by the awareness mechanism. In practice, however, components
+are often structured as Closed Loop Controllers so that the performance
+of the subtasks can be monitored and corrective action taken if the
+results of the actual execution do not match the predicted situation.
+
+Ensuring that the dynamic behavior of systems bases on autonomous
+components matches their specification is a difficult problem. In many
+cases, Design-time Verification and Design-time Validation techniques
+can be used. In particular, Statistical Model Checking techniques can
+often be applied fruitfully.
+
+** Implementation
+
+In the project, the jRESP \cite{D15} implementation of
+SCEL \cite{SCEL-TR} is typically used to define the overall behavior of
+the ensemble, the communication and coordination between components and
+the overall behavior of individual components. The awareness mechanism
+of each component performs reasoning tasks for the SCEL controller of
+this component; it can be implemented, e.g., in
+/KnowLang/ \cite{KnowLangOS} using the /KnowLang/ reasoner or in
+Poem \cite{poem-tr} using the Iliad/jRESP integration.
+
+An example for an awareness mechanism for a single component that forms
+a Closed Loop Controller is given in the description of the Awareness
+Mechanism pattern, pp. /ff/.
