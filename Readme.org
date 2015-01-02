@@ -1,0 +1,160 @@
+* APEX
+
+  This is a new implementation of APEX, the ASCENS Pattern Explorer.
+  
+** TODO About APEX
+
+** TODO Missing Features
+
+   Many.  No search, no categories.  This will come in the next few
+   months.
+
+** Comparison to APEX V1
+
+   The previous version of APEX, described in deliverable D8.3 of the
+   ASCENS project, offered the possibility to enter new patterns via a
+   web interface.  While this is certainly nice, it required us to run
+   (and secure) a server, and it offered no history etc.  This version
+   runs on top of Emacs org-mode, and all files are stored in a git
+   repository.
+
+** Required Configuration
+
+   The following configuration has to be include in the ~.emacs~ file
+   to build the APEX web site from source.
+
+#+BEGIN_SRC emacs-lisp
+(defun apex-preamble (args)
+  "<nav class=\"navbar navbar-default\">
+      <div class=\"container-fluid\">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class=\"navbar-header\">
+          <button type=\"button\" class=\"navbar-toggle collapsed\" data-toggle=\"collapse\" data-target=\"#bs-example-navbar-collapse-1\">
+            <span class=\"sr-only\">Toggle navigation</span>
+            <span class=\"icon-bar\"></span>
+            <span class=\"icon-bar\"></span>
+            <span class=\"icon-bar\"></span>
+          </button>
+          <a class=\"navbar-brand\" href=\"#\">APEX</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class=\"collapse navbar-collapse\" id=\"bs-example-navbar-collapse-1\">
+          <form class=\"navbar-form navbar-left\" role=\"search\">
+            <div class=\"form-group\">
+              <input type=\"text\" class=\"form-control\" placeholder=\"Search\">
+            </div>
+            <button type=\"submit\" class=\"btn btn-default\">Submit</button>
+          </form>
+          <ul class=\"nav navbar-nav\">
+            <li class=\"dropdown\">
+              <a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">Patterns <span class=\"caret\"></span></a>
+              <ul class=\"dropdown-menu\" role=\"menu\">
+                <li><a href=\"Action-Calculus-Reasoning.html\">Action-Calculus Reasoning</a></li>
+                <li><a href=\"Algorithmic-Planning.html\">Algorithmic Planning</a></li>
+                <li><a href=\"Attribute-Based-Communication.html\">Attribute-based Communication</a></li>
+                <li><a href=\"Awareness-Mechanism.html\">Awareness Mechanism</a></li>
+                <li><a href=\"Blackboard-System.html\">Blackboard System</a></li>
+                <li><a href=\"Cooperation-Mechanism.html\">Cooperation Mechanism</a></li>
+                <li><a href=\"Distributed-Awareness-Based-Behavior.html\">Distributed Awareness-Based Behavior</a></li>
+                <li><a href=\"Data-Driven-Execution.html\">Data-Driven Execution</a></li>
+                <li><a href=\"Dynamic-Code-Update.html\">Dynamic Code Update</a></li>
+                <li><a href=\"Illusion-Of-Stability.html\">Illusion of Stability</a></li>
+                <li><a href=\"Knowledge-Equipped-Component.html\">Knowledge-Equipped-Component</a></li>
+                <li><a href=\"Knowledge-Repository.html\">Knowledge Repository</a></li>
+                <li><a href=\"Reinforcement-Learning.html\">Reinforcement Learning</a></li>
+                <li><a href=\"Shared-Awareness-Mechanism.html\">Shared Awareness Mechanism</a></li>
+                <li><a href=\"Statistical-Model-Checking.html\">Statistical Model Checking</a></li>
+                <li><a href=\"Peer-To-Peer-Learning.html\">Peer-to-Peer Learning</a></li>
+                <li><a href=\"Teacher-Student-Learning.html\">Teacher/Student Learning</a></li>
+                <li><a href=\"Topological-Knowledge-Space.html\">Topological Knowledge Space</a></li>
+                <li><a href=\"Tuple-Space-Based-Coordination.html\">Tuple-Space-Based Coordination</a></li>
+                <li><a href=\"Update-Existing-Knowledge-Source.html\">Update Existing Knowledge Source</a></li>
+                <li class=\"divider\"></li>
+                <li><a href=\"Patterns.html\">All Patterns</a></li>
+              </ul>
+            </li>
+          </ul>
+          <ul class=\"nav navbar-nav\">
+            <li class=\"dropdown\">
+              <a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">Categories <span class=\"caret\"></span></a>
+              <ul class=\"dropdown-menu\" role=\"menu\">
+                <li><a href=\"#\">Category 1</a></li>
+                <li><a href=\"#\">Category 2</a></li>
+                <li><a href=\"#\">Category 3</a></li>
+                <li class=\"divider\"></li>
+                <li><a href=\"#\">All Categories</a></li>
+              </ul>
+            </li>
+          </ul>
+          <ul class=\"nav navbar-nav navbar-right\">
+            <li><a href=\"http://www.ascens-ist.eu/\">ASCENS</a></li>
+            <li class=\"dropdown\">
+              <a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">More <span class=\"caret\"></span></a>
+              <ul class=\"dropdown-menu\" role=\"menu\">
+                <li><a href=\"#\">About</a></li>
+                <li><a href=\"#\">Contact</a></li>
+                <li><a href=\"#\">Help</a></li>
+                <li class=\"divider\"></li>
+                <li><a href=\"#\">Legal</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+    <div class=\"container\">
+      <div class=\"row\">
+        <div class=\"col-md-12\">")
+
+(defun apex-encode-pattern (pattern)
+  (format "%s" pattern))
+
+(setq org-link-abbrev-alist
+      '(("pattern" . "file:%(apex-encode-pattern).org")))
+
+(defun apex-postamble (args)
+  "     </div>
+      </div>
+    </div>
+    <script src=\"jquery-1.11.2.min.js\"></script>
+    <script src=\"bt/js/bootstrap.min.js\"></script>")
+
+  (setq org-publish-project-alist
+        `(("apex-patterns"
+           :base-directory ,(expand-file-name "~/Uni/Projects/Ascens/Apex/Patterns")
+           :publishing-directory ,(expand-file-name "~/Uni/Projects/Ascens/Apex/Export")
+           :publishing-function org-html-publish-to-html
+           :section-numbers nil
+           :html-head "<link href=\"css/fix.css\" rel=\"stylesheet\">"
+           :html-head "<link href=\"bt/css/bootstrap.min.css\" rel=\"stylesheet\">"
+           :html-doctype "html5"
+           :html-html5-fancy t
+           :html-head-include-default-style nil
+           :html-preamble apex-preamble
+           :html-postamble apex-postamble
+           :html-mathjax-options ((path "mj/MathJax.js?config=TeX-AMS-MML_HTMLorMML")
+                                  (scale "100")
+                                  (align "center")
+                                  (indent "2em")
+                                  (mathml nil))
+           :with-toc nil
+           :auto-sitemap t
+           :sitemap-title "All Patterns"
+           :sitemap-filename "Patterns.org"
+           :sitemap-sans-extension nil)
+          ("apex-html"
+           :base-directory ,(expand-file-name "~/Uni/Projects/Ascens/Apex/Patterns")
+           :publishing-directory ,(expand-file-name "~/Uni/Projects/Ascens/Apex/Export")
+           :publishing-function org-publish-attachment
+           :base-extension "html"
+           :recursive t)
+          ("apex-static"
+           :base-directory ,(expand-file-name "~/Uni/Projects/Ascens/Apex/Include")
+           :publishing-directory ,(expand-file-name "~/Uni/Projects/Ascens/Apex/Export")
+           :publishing-function org-publish-attachment
+           :base-extension any
+           :recursive t)
+          ("apex"
+           :components ("apex-static" "apex-html" "apex-patterns"))))
+#+END_SRC
